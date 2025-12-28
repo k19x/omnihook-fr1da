@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0a0f14" />
+  <title>OmniHook Fr1da • Pentest Mobile</title>
+  
+  <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- CodeMirror -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+
+  <!-- Highlight.js para Syntax Highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"></script>
+
+  <!-- jsPDF para Exportação PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          },
+          colors: {
+            bg: 'rgb(var(--bg) / <alpha-value>)',
+            panel: 'rgb(var(--panel) / <alpha-value>)',
+            muted: 'rgb(var(--muted) / <alpha-value>)',
+            txt: 'rgb(var(--txt) / <alpha-value>)',
+            brand: '#38bdf8',
+            'brand-2': '#818cf8',
+            'border-color': 'rgba(var(--border), var(--border-opacity))',
+            'sidebar-bg': 'rgba(var(--sidebar), var(--sidebar-opacity))',
+            'card-bg': 'rgba(var(--sidebar), var(--sidebar-opacity))',
+            'btn-bg': 'rgba(var(--sidebar), var(--sidebar-opacity))',
+            'btn-danger-border': '#ff7b7b',
+            'btn-danger-text': '#ff9b9b',
+            'bg-hover': 'rgba(var(--hover), var(--hover-opacity))',
+            'primary': '#2aa6ff',
+            'console-bg': 'rgb(var(--console) / <alpha-value>)',
+          },
+          boxShadow: {
+            'custom': '0 8px 32px rgba(0, 0, 0, .4)',
+            'glow': '0 0 15px rgba(56, 189, 248, 0.15)',
+          },
+          borderRadius: {
+            'custom': '14px',
+          },
+          backdropSaturate: {
+            '160': '1.6',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(8px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.25s ease-out forwards',
+          },
+        }
+      }
+    }
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer base {
+      :root {
+        --bg: 5 8 10;
+        --panel: 15 22 30;
+        --muted: 142 160 178;
+        --txt: 223 231 239;
+        --border: 255, 255, 255;
+        --border-opacity: 0.08;
+        --sidebar: 255, 255, 255;
+        --sidebar-opacity: 0.03;
+        --hover: 255, 255, 255;
+        --hover-opacity: 0.05;
+        --console: 8 12 18;
+      }
+      [data-theme="light"] {
+        --bg: 243 244 246;
+        --panel: 255 255 255;
+        --muted: 107 114 128;
+        --txt: 17 24 39;
+        --border: 0, 0, 0;
+        --border-opacity: 0.1;
+        --sidebar: 255, 255, 255;
+        --sidebar-opacity: 0.7;
+        --hover: 0, 0, 0;
+        --hover-opacity: 0.05;
+        --console: 229 231 235;
+      }
+    }
+
+    @layer utilities {
+      /* Scrollbar Customizada */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgb(var(--bg));
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgb(var(--panel));
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgb(var(--muted));
+      }
+    }
+
+    @layer components {
+      /* Botões */
+      .btn-base {
+        @apply inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed select-none font-medium text-sm;
+      }
+      .btn-default {
+        @apply btn-base border border-border-color bg-white/5 text-txt hover:bg-white/10 hover:border-white/20 active:scale-95;
+      }
+      .btn-gradient {
+        @apply btn-base bg-gradient-to-r from-brand to-brand-2 text-white font-bold border-none hover:shadow-glow hover:brightness-110 active:scale-95;
+      }
+      .btn-danger {
+        @apply btn-base border border-red-500/30 text-red-400 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/50;
+      }
+      .btn-ghost {
+        @apply btn-base border border-transparent bg-transparent text-muted hover:text-white hover:bg-white/5;
+      }
+      .btn-tab {
+        @apply px-4 py-2.5 cursor-pointer rounded-t-lg text-xs font-bold uppercase tracking-wide text-muted hover:text-txt transition-all border-b-2 border-transparent data-[active=true]:text-brand data-[active=true]:border-brand data-[active=true]:bg-white/[0.02];
+      }
+      .right-sidebar-tab {
+        @apply px-3 py-2 text-xs font-bold uppercase tracking-wide text-muted hover:text-txt transition-all border-b-2 border-transparent data-[active=true]:text-brand data-[active=true]:border-brand;
+      }
+
+      /* Inputs */
+      .input-std {
+        @apply w-full bg-black/20 border border-border-color text-txt rounded-lg p-2 outline-none focus:border-brand/50 focus:bg-black/40 transition-all placeholder-gray-600 text-sm;
+      }
+      .input-wrapper {
+        @apply flex items-center gap-2 bg-black/20 border border-border-color px-2.5 rounded-lg focus-within:border-brand/50 transition-colors;
+      }
+      .input-naked {
+        @apply border-none bg-transparent py-2.5 w-full text-txt outline-none;
+      }
+
+      /* Containers */
+      .card-panel {
+        @apply bg-panel/60 border border-border-color rounded-xl overflow-hidden backdrop-blur-sm;
+      }
+      .accordion-header {
+        @apply w-full flex justify-between items-center p-3 text-left hover:bg-white/5 transition-colors text-sm font-semibold text-gray-300 hover:text-white;
+      }
+      .glass {
+        @apply bg-sidebar-bg backdrop-blur-xl border border-border-color;
+      }
+      .tab-panel, .right-sidebar-panel {
+        @apply animate-fade-in;
+      }
+    }
+  </style>
+</head>
+<body class="bg-bg text-txt font-sans lg:h-screen lg:overflow-hidden overflow-y-auto selection:bg-brand selection:text-black">
+
+  <div id="main-grid" class="min-h-dvh lg:h-dvh grid grid-cols-1 lg:grid-cols-[320px_1fr_360px] gap-4 p-4 transition-all duration-300">
+    
+    <aside id="left-sidebar" class="glass rounded-custom shadow-custom flex flex-col gap-3 overflow-y-auto overflow-x-hidden p-3 h-[50vh] lg:h-full transition-all duration-300">
+      
+      <div class="flex items-center gap-3 p-3 pb-2 mb-1">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand to-brand-2 flex items-center justify-center shadow-glow"><i class="fa-solid fa-bolt text-white text-sm"></i></div>
+        <h1 class="font-extrabold tracking-wide text-xl text-white">OmniHook</h1>
+      </div>
+
+      <div class="card-panel accordion-item group">
+        <button class="accordion-header" aria-expanded="true">
+          <span class="flex items-center gap-2"><i class="fa-solid fa-box-open text-muted"></i> Seleção de Pacote</span>
+          <i class="fa-solid fa-chevron-down text-xs text-muted transition-transform"></i>
+        </button>
+        <div class="accordion-content px-3 pb-3 block">
+          <button id="listarPacotesBtn" class="btn-default w-full mb-3" disabled>
+            <i class="fa-solid fa-box"></i> Listar Pacotes
+          </button>
+          <div class="flex flex-col gap-1.5">
+            <label for="pacotes" class="text-xs font-semibold text-muted uppercase">Selecionar pacote</label>
+            <select id="pacotes" class="input-std appearance-none cursor-pointer"><option value="">—</option></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-panel accordion-item group">
+        <button class="accordion-header" aria-expanded="false">
+          <span class="flex items-center gap-2"><i class="fa-solid fa-ghost text-muted"></i> Configuração Frida</span>
+          <i class="fa-solid fa-chevron-down text-xs text-muted transition-transform"></i>
+        </button>
+        <div class="accordion-content px-3 pb-3 hidden">
+          <h4 class="mb-2 text-xs font-bold text-muted uppercase tracking-wider">Modo de Análise</h4>
+          <div class="flex flex-col gap-2 bg-bg/30 border border-border-color rounded-lg p-3 text-sm">
+            <label class="flex items-center gap-2 cursor-pointer hover:text-white transition-colors"><input type="radio" name="forma" value="-f" checked class="accent-brand"> Spawn (-f)</label>
+            <label class="flex items-center gap-2 cursor-pointer hover:text-white transition-colors"><input type="radio" name="forma" value="-F" class="accent-brand"> Frontmost (-F)</label>
+            <label class="flex items-center gap-2 cursor-pointer hover:text-white transition-colors"><input type="radio" name="forma" value="-n" class="accent-brand"> Name (-n)</label>
+          </div>
+
+          <div class="h-px bg-border-color my-3"></div>
+
+          <h4 class="mb-2 text-xs font-bold text-muted uppercase tracking-wider">Scripts</h4>
+          <div class="grid grid-cols-2 gap-2 mb-2">
+            <button id="listarScriptsBtn" class="btn-default" disabled><i class="fa-solid fa-list"></i> Listar</button>
+            <button id="adicionarScriptBtn" class="btn-default" disabled><i class="fa-solid fa-upload"></i> Upload</button>
+          </div>
+          <select id="scripts" class="input-std mb-3"><option value="">— Selecionar Script —</option></select>
+
+          <ul id="scriptsSelecionados" class="list-none p-0 m-0 flex flex-wrap gap-2 empty:hidden mb-3"></ul>
+
+          <button id="executarBtn" class="btn-gradient w-full" disabled>
+            <i class="fa-solid fa-play"></i> Executar Frida
+          </button>
+        </div>
+      </div>
+
+      <div class="card-panel accordion-item group">
+        <button class="accordion-header" aria-expanded="false">
+          <span class="flex items-center gap-2"><i class="fa-brands fa-android text-muted"></i> Ferramentas ADB</span>
+          <i class="fa-solid fa-chevron-down text-xs text-muted transition-transform"></i>
+        </button>
+        <div class="accordion-content px-3 pb-3 hidden">
+          <div class="grid grid-cols-3 gap-2 text-xs">
+            <button id="ativarTcpipBtn" class="btn-default px-1" disabled>TCP/IP</button>
+            <button id="statusConexaoBtn" class="btn-default px-1" disabled>Status</button>
+            <button id="reiniciarFridaBtn" class="btn-default px-1" disabled>Reiniciar</button>
+          </div>
+          
+          <div class="h-px bg-border-color my-3"></div>
+          
+          <h4 class="mb-2 text-xs font-bold text-muted uppercase">Port Forwarding</h4>
+          <div class="flex gap-2 items-end">
+            <div class="flex-1">
+              <label class="text-[10px] text-muted">Local</label>
+              <input id="forward-local" type="number" placeholder="8080" class="input-std py-1.5" />
+            </div>
+            <div class="flex-1">
+              <label class="text-[10px] text-muted">Remoto</label>
+              <input id="forward-remote" type="number" placeholder="8080" class="input-std py-1.5" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 mt-2">
+            <button id="portForwardBtn" class="btn-default text-xs" disabled>Aplicar</button>
+            <button id="listForwardBtn" class="btn-default text-xs" disabled>Listar</button>
+          </div>
+          <pre id="forward-list-output" class="mt-2 text-[10px] text-muted bg-bg p-2 rounded border border-border-color hidden"></pre>
+        </div>
+      </div>
+
+      <div class="card-panel accordion-item group">
+        <button class="accordion-header" aria-expanded="false">
+          <span class="flex items-center gap-2"><i class="fa-solid fa-globe text-muted"></i> Proxy</span>
+          <i class="fa-solid fa-chevron-down text-xs text-muted transition-transform"></i>
+        </button>
+        <div class="accordion-content px-3 pb-3 hidden">
+          <div class="grid grid-cols-[2fr_1fr] gap-2 mb-2">
+             <div class="flex flex-col gap-1">
+                <label class="text-[10px] text-muted">IP</label>
+                <div class="input-wrapper">
+                  <i class="fa-solid fa-network-wired text-muted text-xs"></i>
+                  <input id="proxy-ip" class="input-naked py-1.5 text-sm" placeholder="192.168.x.x" />
+                </div>
+             </div>
+             <div class="flex flex-col gap-1">
+                <label class="text-[10px] text-muted">Porta</label>
+                <div class="input-wrapper">
+                  <input id="proxy-port" type="number" class="input-naked py-1.5 text-sm text-center" placeholder="8080" />
+                </div>
+             </div>
+          </div>
+          
+          <label class="flex items-center gap-2 my-3 cursor-pointer select-none">
+            <input type="checkbox" id="proxyToggle" class="accent-brand w-4 h-4" />
+            <span class="text-xs text-muted">Habilitar no dispositivo</span>
+          </label>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button id="setProxyBtn" class="btn-default text-xs" disabled>Aplicar</button>
+            <button id="getProxyBtn" class="btn-default text-xs">Ver</button>
+            <button id="clearProxyBtn" class="btn-danger text-xs col-span-2">Limpar Proxy</button>
+            <button id="copyBurpIpBtn" class="btn-default text-xs col-span-2 border-dashed opacity-70 hover:opacity-100">Copiar Meu IP Local</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="h-[85vh] lg:h-full grid grid-rows-[auto_1fr_auto] gap-4 min-h-0 min-w-0">
+      
+      <header class="flex items-center justify-between glass rounded-custom px-4 py-2 shadow-custom">
+        <button id="toggleLeftSidebarBtn" class="btn-ghost mr-2 text-muted hover:text-txt" title="Alternar Menu Lateral"><i class="fa-solid fa-bars"></i></button>
+        <div class="flex gap-2 items-center">
+          <!-- Seletor de Dispositivo movido para o Header -->
+          <div class="flex items-center gap-1 mr-2 border-r border-border-color pr-3">
+             <div class="relative">
+                <select id="dispositivos" class="bg-black/20 border border-border-color text-txt rounded-lg py-1.5 pl-2 pr-8 text-xs outline-none focus:border-brand/50 appearance-none cursor-pointer min-w-[160px]">
+                   <option value="">Selecionar dispositivo</option>
+                </select>
+                <i class="fa-solid fa-chevron-down absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted pointer-events-none"></i>
+             </div>
+             <button id="listarDispositivosBtn" class="btn-default px-2 py-1.5 text-xs" title="Atualizar Lista"><i class="fa-solid fa-rotate"></i></button>
+          </div>
+
+          <button id="dumpApkBtn" class="btn-default"><i class="fa-solid fa-download text-green-400"></i> Extrair APK</button>
+          <button id="screenshotBtn" class="btn-default"><i class="fa-solid fa-camera text-yellow-400"></i> Print</button>
+          <button id="mirrorBtn" class="btn-default"><i class="fa-solid fa-display text-purple-400"></i> Mirror</button>
+        </div>
+        <div class="flex gap-1 border-l border-border-color pl-3 ml-2">
+          <button id="themeToggleBtn" class="btn-ghost px-2.5" title="Tema"><i class="fa-solid fa-desktop"></i></button>
+          <button id="clearLogBtn" class="btn-ghost px-2.5 hover:text-red-400" title="Limpar"><i class="fa-solid fa-trash"></i></button>
+          <button id="saveLogBtn" class="btn-ghost px-2.5" title="Salvar"><i class="fa-solid fa-floppy-disk"></i></button>
+          <button id="refreshBtn" class="btn-ghost px-2.5" title="Recarregar"><i class="fa-solid fa-rotate"></i></button>
+          <button id="toggleRightSidebarBtn" class="btn-ghost px-2.5 border-l border-border-color ml-1" title="Alternar Painel Direito"><i class="fa-solid fa-table-columns"></i></button>
+        </div>
+      </header>
+
+      <section class="glass rounded-custom shadow-custom flex flex-col h-full overflow-hidden relative">
+        <div class="flex gap-1 px-3 border-b border-border-color bg-black/20 pt-2">
+            <button class="btn-tab" data-tab="apps-panel"><i class="fa-brands fa-android mr-2"></i> Apps</button>
+          <button class="btn-tab" data-tab="console-panel" data-active="true"><i class="fa-solid fa-terminal mr-2"></i> Console</button>
+          <button class="btn-tab" data-tab="logcat-panel"><i class="fa-solid fa-satellite-dish mr-2"></i> Logcat</button>
+          <button class="btn-tab" data-tab="editor-panel"><i class="fa-solid fa-code mr-2"></i> Editor de Scripts</button>
+          <button class="btn-tab" data-tab="jadx-panel"><i class="fa-solid fa-microchip mr-2"></i> JADX</button>
+          <button class="btn-tab" data-tab="terminal-panel"><i class="fa-solid fa-laptop-code mr-2"></i> Terminal</button>
+          <button class="btn-tab" data-tab="gallery-panel"><i class="fa-solid fa-images mr-2"></i> Galeria</button>
+          <button class="btn-tab" data-tab="explorer-panel"><i class="fa-solid fa-folder-open mr-2"></i> Arquivos</button>
+          <button class="btn-tab" data-tab="deeplink-panel"><i class="fa-solid fa-link mr-2"></i> Deep Links</button>
+          <button class="btn-tab ml-auto" data-tab="settings-panel"><i class="fa-solid fa-cog"></i></button>
+        </div>
+
+        <div class="flex-grow overflow-hidden relative">
+          
+          <div id="console-panel" class="tab-panel absolute inset-0 p-0 flex flex-col" data-active="true">
+            <div class="flex-grow flex gap-0 overflow-hidden bg-console-bg/90">
+              <pre id="log-gutter" class="m-0 py-3 px-2 w-12 flex-shrink-0 text-right text-muted/30 select-none bg-black/20 border-r border-border-color font-mono text-xs leading-relaxed overflow-hidden"></pre>
+              
+              <pre id="log" class="m-0 p-3 flex-auto min-w-0 font-mono text-xs md:text-sm leading-relaxed text-txt whitespace-pre-wrap break-words overflow-x-hidden overflow-y-auto custom-scrollbar h-full selection:bg-brand/30"></pre>
+            </div>
+          </div>
+
+          <div id="logcat-panel" class="tab-panel absolute inset-0 p-0 flex flex-col hidden" data-active="false">
+            <div class="p-2 border-b border-border-color flex items-center justify-end">
+                <button id="clear-logcat-btn" class="btn-default text-xs"><i class="fa-solid fa-trash"></i> Limpar Logcat</button>
+            </div>
+            <div class="flex-grow flex gap-0 overflow-hidden bg-console-bg/90">
+              <pre id="logcat-log" class="m-0 p-3 flex-auto min-w-0 font-mono text-xs leading-relaxed text-txt whitespace-pre-wrap break-words overflow-x-hidden overflow-y-auto custom-scrollbar h-full selection:bg-brand/30"></pre>
+            </div>
+          </div>
+
+          <div id="editor-panel" class="tab-panel absolute inset-0 grid grid-cols-[250px_1fr] gap-0 hidden" data-active="false">
+            <div class="bg-black/20 border-r border-border-color flex flex-col">
+                <div class="p-2 border-b border-border-color flex gap-2">
+                    <button id="editor-new-btn" class="btn-default text-xs flex-1"><i class="fa-solid fa-plus"></i> Novo</button>
+                    <button id="editor-refresh-btn" class="btn-default text-xs flex-1"><i class="fa-solid fa-rotate"></i> Listar</button>
+                </div>
+                <div id="editor-script-list" class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+                    <!-- Lista de scripts será populada aqui -->
+                </div>
+            </div>
+            <div class="flex flex-col min-h-0">
+                <div class="p-2 border-b border-border-color flex items-center justify-between bg-bg/50">
+                    <span id="editor-current-file" class="font-mono text-sm text-muted">Nenhum arquivo selecionado</span>
+                    <div class="flex gap-2">
+                        <button id="editor-ai-btn" class="btn-default text-xs" disabled><i class="fa-solid fa-robot text-brand"></i> Melhorar com IA</button>
+                        <button id="editor-save-btn" class="btn-default text-xs" disabled><i class="fa-solid fa-save"></i> Salvar</button>
+                        <button id="editor-delete-btn" class="btn-danger text-xs" disabled><i class="fa-solid fa-trash"></i> Deletar</button>
+                        <button id="editor-run-btn" class="btn-gradient text-xs" disabled><i class="fa-solid fa-play"></i> Executar Script</button>
+                    </div>
+                </div>
+                <div id="editor-container" class="flex-1 relative"></div>
+            </div>
+          </div>
+
+          <div id="jadx-panel" class="tab-panel absolute inset-0 grid grid-cols-[300px_1fr] gap-0 hidden" data-active="false">
+            <div class="bg-black/20 border-r border-border-color flex flex-col min-h-0">
+                <div class="p-2 border-b border-border-color">
+                    <label class="text-[10px] text-muted uppercase font-bold">Projeto (Pacote)</label>
+                    <div class="flex gap-1 mt-1">
+                        <select id="jadx-project-select" class="input-std text-xs py-1"><option value="">Selecione...</option></select>
+                        <button id="jadx-refresh-projects" class="btn-default px-2"><i class="fa-solid fa-rotate"></i></button>
+                        <button id="jadx-upload-btn" class="btn-default px-2" title="Upload APK Local"><i class="fa-solid fa-upload"></i></button>
+                    </div>
+                    <input id="jadx-file-search" class="input-std mt-2 text-xs py-1" placeholder="Filtrar arquivos..." disabled>
+                </div>
+                <div id="jadx-file-tree" class="flex-1 overflow-y-auto custom-scrollbar p-2 font-mono text-xs text-muted">
+                    <div class="text-center mt-4 opacity-50">Selecione um projeto</div>
+                </div>
+            </div>
+            <div class="flex flex-col min-h-0 bg-[#263238]">
+                <div id="jadx-current-path" class="p-2 border-b border-border-color bg-bg/50 text-xs font-mono text-brand truncate">Nenhum arquivo aberto</div>
+                <div id="jadx-editor-container" class="flex-1 relative"></div>
+            </div>
+          </div>
+
+          <div id="terminal-panel" class="tab-panel absolute inset-0 p-0 flex flex-col hidden" data-active="false">
+            <div class="p-2 border-b border-border-color flex flex-wrap gap-2">
+                <button class="terminal-quick-action btn-danger text-xs" data-command="reboot" data-requires-confirmation="true" data-confirm-message="Tem certeza que deseja REINICIAR o dispositivo?">
+                    <i class="fa-solid fa-power-off"></i> Reboot
+                </button>
+                <button class="terminal-quick-action btn-danger text-xs" data-command="reboot bootloader" data-requires-confirmation="true" data-confirm-message="Tem certeza que deseja reiniciar em MODO BOOTLOADER?">
+                    <i class="fa-solid fa-wrench"></i> Bootloader
+                </button>
+                <button class="terminal-quick-action btn-danger text-xs" data-command="reboot recovery" data-requires-confirmation="true" data-confirm-message="Tem certeza que deseja reiniciar em MODO RECOVERY?">
+                    <i class="fa-solid fa-helmet-safety"></i> Recovery
+                </button>
+                <button class="terminal-quick-action btn-danger text-xs" data-command="shell su -c shutdown" data-requires-confirmation="true" data-confirm-message="Tem certeza que deseja DESLIGAR o dispositivo (requer root)?">
+                    <i class="fa-solid fa-plug-circle-xmark"></i> Shutdown (Root)
+                </button>
+            </div>
+            <div id="terminal-output" class="flex-grow p-3 font-mono text-xs md:text-sm leading-relaxed text-txt whitespace-pre-wrap break-words overflow-y-auto custom-scrollbar"></div>
+            <div class="flex items-center p-2 border-t border-border-color bg-console-bg">
+                <span class="font-mono text-brand mr-2">$ adb</span>
+                <input type="text" id="terminal-input" class="flex-grow bg-transparent border-none outline-none text-txt font-mono" placeholder="Digite seu comando e pressione Enter...">
+            </div>
+          </div>
+
+          <div id="gallery-panel" class="tab-panel h-full p-4 overflow-y-auto hidden" data-active="false">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-semibold text-lg text-txt"><i class="fa-solid fa-images text-purple-400 mr-2"></i>Galeria de Mídia</h3>
+                <button id="refresh-gallery-btn" class="btn-default text-xs"><i class="fa-solid fa-rotate"></i> Recarregar</button>
+            </div>
+            <div id="gallery-container" class="space-y-6">
+                <div class="text-center text-muted mt-10">Nenhuma mídia encontrada. Tire um print ou grave a tela para começar.</div>
+            </div>
+          </div>
+
+          <div id="explorer-panel" class="tab-panel h-full p-4 overflow-y-auto hidden" data-active="false">
+            <div class="flex justify-between items-center mb-3">
+               <div id="file-explorer-breadcrumb" class="text-sm font-mono text-brand bg-brand/10 px-2 py-1 rounded">/data/local/tmp</div>
+               <button id="upload-file-btn" class="btn-default text-xs"><i class="fa-solid fa-upload"></i> Upload</button>
+            </div>
+            
+            <div class="input-wrapper mb-3">
+              <i class="fa-solid fa-search text-muted"></i>
+              <input id="explorer-search-input" class="input-naked" placeholder="Filtrar arquivos..." autocomplete="off">
+            </div>
+
+            <div class="border border-border-color rounded-lg overflow-hidden">
+              <table class="w-full text-sm text-left border-collapse">
+                <thead class="bg-white/5 text-muted font-bold text-xs uppercase tracking-wider">
+                  <tr>
+                    <th class="p-3 w-8"></th>
+                    <th class="p-3 cursor-pointer select-none hover:text-white group" onclick="ui_sortTable(1, 'name')">
+                      Nome <i class="fa-solid fa-sort ml-1 opacity-30 group-hover:opacity-100 transition-opacity"></i>
+                    </th>
+                    <th class="p-3 cursor-pointer select-none hover:text-white group" onclick="ui_sortTable(2, 'size')">
+                      Tamanho <i class="fa-solid fa-sort ml-1 opacity-30 group-hover:opacity-100 transition-opacity"></i>
+                    </th>
+                    <th class="p-3 cursor-pointer select-none hover:text-white group" onclick="ui_sortTable(3, 'date')">
+                      Data <i class="fa-solid fa-sort ml-1 opacity-30 group-hover:opacity-100 transition-opacity"></i>
+                    </th>
+                    <th class="p-3">Permissões</th>
+                    <th class="p-3 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="file-explorer-body" class="divide-y divide-border-color bg-transparent">
+                  </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="apps-panel" class="tab-panel h-full flex flex-col hidden" data-active="false">
+             <div class="flex justify-between items-center p-4 border-b border-border-color bg-bg/50 backdrop-blur-sm sticky top-0 z-10">
+                <h3 class="font-semibold text-lg text-txt"><i class="fa-brands fa-android text-green-500 mr-2"></i>Aplicativos Instalados</h3>
+                <div class="flex gap-2">
+                   <select id="apps-filter" class="bg-bg border border-border-color rounded px-2 py-1 text-sm text-txt focus:border-primary outline-none cursor-pointer">
+                      <option value="user">Usuário</option>
+                      <option value="system">Sistema</option>
+                      <option value="all">Todos</option>
+                   </select>
+                   <input type="text" id="apps-search" placeholder="Filtrar pacotes..." class="bg-bg border border-border-color rounded px-3 py-1 text-sm text-txt focus:border-primary outline-none w-64">
+                   <button id="install-apk-btn" class="btn-default"><i class="fa-solid fa-plus"></i> Instalar APK</button>
+                   <button onclick="loadAppsGrid(true)" class="text-muted hover:text-brand p-2" title="Forçar Atualização de Ícones"><i class="fa-solid fa-images"></i></button>
+                   <button onclick="loadAppsGrid()" class="text-muted hover:text-primary p-2" title="Recarregar Lista"><i class="fa-solid fa-rotate"></i></button>
+                </div>
+             </div>
+             <div id="apps-grid-container" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 content-start">
+                <div class="col-span-full text-center text-muted mt-10">Selecione um dispositivo para carregar os apps.</div>
+             </div>
+          </div>
+
+          <div id="deeplink-panel" class="tab-panel h-full p-6 overflow-y-auto hidden" data-active="false">
+             <div class="max-w-3xl mx-auto space-y-4">
+                <div class="bg-panel border border-border-color rounded-lg p-4">
+                   <label class="block text-sm font-medium text-muted mb-2">Comando AM Start</label>
+                   <div class="flex gap-2">
+                      <input type="text" id="deeplink-input" class="input-std font-mono text-sm" placeholder="-a android.intent.action.VIEW -d 'https://...'">
+                      <button id="send-deeplink-btn" class="btn-gradient shrink-0" disabled><i class="fa-solid fa-paper-plane"></i> Enviar</button>
+                   </div>
+                   <div id="deeplink-status" class="text-xs mt-2 text-brand h-4"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                   <button id="extract-main-activity-btn" class="btn-default justify-start h-full" disabled>
+                      <div class="text-left">
+                         <div class="font-bold text-txt">Main Activity</div>
+                         <div class="text-xs text-muted">Encontrar activity de entrada</div>
+                      </div>
+                      <i class="fa-solid fa-wand-magic-sparkles ml-auto opacity-50"></i>
+                   </button>
+                   <button id="extract-all-activities-btn" class="btn-default justify-start h-full" disabled>
+                      <div class="text-left">
+                         <div class="font-bold text-txt">Exported Activities</div>
+                         <div class="text-xs text-muted">Listar todas acessíveis externamente</div>
+                      </div>
+                      <i class="fa-solid fa-bolt ml-auto opacity-50"></i>
+                   </button>
+                </div>
+                
+                <div id="extracted-activities-container" class="space-y-2"></div>
+
+                <div class="pt-4 border-t border-border-color">
+                   <h5 class="text-xs font-bold text-muted uppercase mb-3">Templates Rápidos</h5>
+                   <div class="flex flex-wrap gap-2" id="deeplink-examples">
+                      <span class="cursor-pointer px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs hover:border-brand hover:text-brand transition-colors" data-intent="-a android.intent.action.VIEW -d 'https://google.com'">Abrir URL</span>
+                      <span class="cursor-pointer px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs hover:border-brand hover:text-brand transition-colors" data-intent="-a android.settings.SETTINGS">Settings</span>
+                   </div>
+                </div>
+             </div>
+          </div>
+
+          <div id="settings-panel" class="tab-panel h-full p-6 overflow-y-auto hidden" data-active="false">
+             <div class="max-w-2xl mx-auto">
+                <h3 class="text-xl font-bold mb-1">Configurações</h3>
+                <p class="text-muted text-sm mb-6">Ajustes globais do servidor OmniHook</p>
+
+                <div class="card-panel p-5 space-y-4">
+                   <div class="flex items-center gap-3 text-brand">
+                      <i class="fa-solid fa-robot text-xl"></i>
+                      <span class="font-bold">Assistente IA</span>
+                   </div>
+                   
+                   <div>
+                      <label class="block text-xs font-bold text-muted uppercase mb-1.5">Provedor</label>
+                      <select id="ai-provider-select" class="input-std">
+                         <option value="gemini">Google Gemini (Recomendado)</option>
+                         <option value="openai" disabled>OpenAI (Em breve)</option>
+                      </select>
+                   </div>
+
+                   <div>
+                      <label class="block text-xs font-bold text-muted uppercase mb-1.5">API Key</label>
+                      <div class="input-wrapper">
+                         <i class="fa-solid fa-key text-muted"></i>
+                         <input type="password" id="api-key-input" class="input-naked" placeholder="Cole sua chave aqui...">
+                      </div>
+                      <p class="text-[10px] text-muted mt-1">Sua chave é salva apenas localmente no servidor.</p>
+                   </div>
+                   
+                   <div class="flex justify-end pt-2">
+                      <button id="save-settings-btn" class="btn-default bg-brand/10 border-brand/30 text-brand hover:bg-brand/20">
+                         <i class="fa-solid fa-save"></i> Salvar Alterações
+                      </button>
+                   </div>
+                </div>
+             </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="flex items-center gap-2.5 text-xs text-muted font-mono px-2">
+        <div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse"></div>
+        <span>Backend: FastAPI • WebSocket Ativo</span>
+        <span class="ml-auto opacity-50">v2.1.0-androguard</span>
+      </footer>
+    </main>
+
+    <aside id="right-sidebar" class="glass rounded-custom shadow-custom flex flex-col gap-3 p-3 overflow-y-auto min-h-0 h-[50vh] lg:h-full transition-all duration-300">
+      <div class="flex items-center justify-between text-txt mb-1 px-1 border-b border-border-color">
+        <div class="flex -mb-px">
+             <button class="right-sidebar-tab" data-tab="insights-right-panel" data-active="true">
+                <i class="fa-solid fa-gauge-high"></i> Insights
+             </button>
+             <button class="right-sidebar-tab" data-tab="device-right-panel">
+                <i class="fa-solid fa-display"></i> Dispositivo
+             </button>
+        </div>
+        <span class="w-2 h-2 rounded-full bg-gray-600 transition-colors duration-500" id="d-online-dot"></span>
+      </div>
+
+      <div id="insights-right-panel" class="right-sidebar-panel space-y-3" data-active="true">
+        <style>
+           .insight-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,0.1); font-size: 0.85rem; }
+           .insight-row:last-child { border-bottom: none; }
+           .insight-label { color: #8ea0b2; }
+           .insight-val { color: #dfe7ef; font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; }
+        </style>
+
+        <div class="card-panel p-3 shadow-lg">
+          <div class="insight-row"><span class="insight-label">Modelo</span><span class="insight-val text-white" id="d-name">—</span></div>
+          <div class="insight-row"><span class="insight-label">Android</span><span class="insight-val"><span id="d-android">—</span> <span class="text-xs text-muted">(SDK <span id="d-sdk">-</span>)</span></span></div>
+          <div class="insight-row"><span class="insight-label">Arch</span><span class="insight-val" id="d-cpu">—</span></div>
+        </div>
+
+        <div class="card-panel p-3 shadow-lg relative overflow-hidden group">
+           <div class="absolute top-0 right-0 w-16 h-16 bg-red-500/10 rounded-full blur-xl -mr-8 -mt-8 pointer-events-none"></div>
+           <div class="insight-row"><span class="insight-label">Root</span><span class="insight-val text-red-400 font-bold" id="d-root">—</span></div>
+           <div class="insight-row"><span class="insight-label">SELinux</span><span class="insight-val" id="d-selinux">—</span></div>
+           <div class="insight-row"><span class="insight-label">Frida</span><span class="insight-val text-green-400" id="d-frida">—</span></div>
+           <div class="insight-row"><span class="insight-label">Modo Dev</span><span class="insight-val" id="d-dev-mode">—</span></div>
+           <div class="insight-row"><span class="insight-label">Criptografia</span><span class="insight-val" id="d-crypto">—</span></div>
+           <div class="insight-row"><span class="insight-label">Bloqueio Tela</span><span class="insight-val" id="d-screenlock">—</span></div>
+           <div class="insight-row"><span class="insight-label">Certs Usuário</span><span class="insight-val" id="d-user-certs">—</span></div>
+        </div>
+
+        <div class="card-panel p-3 shadow-lg">
+          <div class="insight-row">
+             <span class="insight-label"><i class="fa-solid fa-battery-full mr-1"></i> Bateria</span>
+             <span class="insight-val"><span id="d-batt">—</span>%</span>
+          </div>
+          <div class="insight-row">
+             <span class="insight-label"><i class="fa-solid fa-temperature-half mr-1"></i> Temp</span>
+             <span class="insight-val" id="d-temp">—°C</span>
+          </div>
+          <div class="insight-row"><span class="insight-label">IP Wi-Fi</span><span class="insight-val" id="d-ip">—</span></div>
+        </div>
+      </div>
+
+      <div id="device-right-panel" class="right-sidebar-panel hidden" data-active="false">
+        <img id="mirror-stream-img" class="w-full h-auto bg-black rounded-lg border border-border-color" alt="O espelhamento aparecerá aqui.">
+        <button id="stop-mirror-btn" class="btn-danger w-full mt-2 hidden">Parar Espelhamento</button>
+      </div>
+    </aside>
+  </div>
+
+  <div id="ai-analysis-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-panel border border-border-color rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in-up">
+       <div class="flex justify-between items-center p-4 border-b border-border-color bg-bg/50">
+          <h4 class="font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-robot text-brand"></i> Análise de Segurança IA</h4>
+          <div class="flex gap-2">
+             <button id="ai-export-md-btn" class="btn-ghost text-xs px-2" title="Exportar Markdown"><i class="fa-brands fa-markdown text-lg"></i></button>
+             <button id="ai-export-pdf-btn" class="btn-ghost text-xs px-2" title="Exportar PDF"><i class="fa-solid fa-file-pdf text-lg"></i></button>
+             <button id="ai-modal-close-btn" class="btn-ghost w-8 h-8 rounded-full p-0 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+       </div>
+       
+       <div class="p-6 overflow-y-auto custom-scrollbar">
+          <div id="ai-modal-status" class="text-center text-muted">Processando...</div>
+          
+          <div id="ai-modal-results" class="hidden space-y-6">
+             <div class="bg-card-bg rounded-lg p-4 border border-border-color">
+                <h5 class="text-brand font-bold mb-2 flex items-center gap-2"><i class="fa-solid fa-book-open"></i> Resumo</h5>
+                <p id="ai-res-summary" class="text-sm leading-relaxed text-gray-300"></p>
+             </div>
+
+             <div class="grid md:grid-cols-2 gap-4">
+               <div class="bg-red-500/5 rounded-lg p-4 border border-red-500/20">
+                  <h5 class="text-red-400 font-bold mb-2 flex items-center gap-2"><i class="fa-solid fa-shield-halved"></i> Vulnerabilidades</h5>
+                  <p id="ai-res-security" class="text-sm leading-relaxed text-gray-300"></p>
+               </div>
+               <div class="bg-card-bg rounded-lg p-4 border border-border-color">
+                  <h5 class="text-orange-400 font-bold mb-2 flex items-center gap-2"><i class="fa-solid fa-bug"></i> Vetor de Ataque</h5>
+                  <pre id="ai-res-exploit" class="text-xs font-mono bg-bg p-2 rounded text-gray-400 whitespace-pre-wrap break-words"></pre>
+               </div>
+             </div>
+
+             <div>
+                <h5 class="text-brand font-bold mb-2 flex items-center gap-2"><i class="fa-solid fa-code"></i> Script Frida Sugerido</h5>
+                <div class="relative group">
+                   <pre id="ai-res-frida-script" class="text-xs font-mono bg-[#0d141c] p-4 rounded-lg border border-border-color text-green-400 whitespace-pre-wrap break-words selection:bg-white/20"></pre>
+                   <button class="absolute top-2 right-2 btn-ghost text-xs opacity-0 group-hover:opacity-100 transition-opacity bg-panel border border-border-color">Copiar</button>
+                </div>
+             </div>
+          </div>
+       </div>
+    </div>
+  </div>
+
+  <div id="manifest-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-panel border border-border-color rounded-2xl w-full max-w-5xl h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in-up">
+       <div class="flex justify-between items-center p-4 border-b border-border-color bg-bg/50 gap-4">
+          <h4 class="font-bold text-lg flex items-center gap-2 shrink-0"><i class="fa-brands fa-android text-green-400"></i> AndroidManifest.xml</h4>
+          
+          <!-- Barra de Busca -->
+          <div class="flex items-center gap-2 bg-black/20 border border-border-color rounded-lg px-2 py-1 flex-1 max-w-md">
+             <i class="fa-solid fa-magnifying-glass text-muted text-xs"></i>
+             <input id="manifest-search" type="text" placeholder="Buscar (ex: permission, activity)..." class="bg-transparent border-none outline-none text-xs text-txt w-full placeholder-gray-600">
+             <span id="manifest-search-count" class="text-[10px] text-muted whitespace-nowrap hidden px-1">0/0</span>
+             <div class="flex gap-1 border-l border-border-color pl-2 ml-1">
+                <button id="manifest-search-prev" class="text-muted hover:text-white p-1 hover:bg-white/5 rounded"><i class="fa-solid fa-chevron-up text-xs"></i></button>
+                <button id="manifest-search-next" class="text-muted hover:text-white p-1 hover:bg-white/5 rounded"><i class="fa-solid fa-chevron-down text-xs"></i></button>
+             </div>
+          </div>
+
+          <div class="flex gap-2 shrink-0">
+             <button id="analyze-manifest-ai-btn" class="btn-gradient text-xs flex items-center gap-2 px-3 py-1.5">
+                <i class="fa-solid fa-robot"></i> Analisar Vulnerabilidades
+             </button>
+             <button id="copy-manifest-btn" class="btn-ghost text-xs"><i class="fa-solid fa-copy"></i> Copiar</button>
+             <button id="manifest-modal-close-btn" class="btn-ghost w-8 h-8 rounded-full p-0 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+       </div>
+       <div class="flex-1 overflow-auto custom-scrollbar bg-[#282c34] p-0">
+          <pre><code id="manifest-code" class="language-xml text-sm font-mono h-full"></code></pre>
+       </div>
+    </div>
+  </div>
+
+  <div id="run-with-script-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-panel border border-border-color rounded-2xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in-up">
+       <div class="flex justify-between items-center p-4 border-b border-border-color bg-bg/50">
+          <h4 class="font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-file-code text-cyan-400"></i> Executar com Script</h4>
+          <button id="run-with-script-modal-close-btn" class="btn-ghost w-8 h-8 rounded-full p-0 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+       </div>
+       <div class="p-6 overflow-y-auto custom-scrollbar">
+          <p class="text-sm text-muted mb-4">Selecione um script para injetar no pacote <strong id="run-with-script-package-name" class="text-brand"></strong>.</p>
+          <div id="run-with-script-list" class="flex flex-col gap-2 max-h-64 overflow-y-auto border border-border-color rounded-lg p-2">
+             </div>
+       </div>
+    </div>
+ </div>
+
+  <script src="{{ url_for('static', path='js/script.js') }}" defer></script>
+  <script src="{{ url_for('static', path='js/ui.js') }}" defer></script>
+</body>
+</html>

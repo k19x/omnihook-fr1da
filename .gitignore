@@ -1,0 +1,44 @@
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+env/
+
+# --- Configuração e Segredos (CRÍTICO) ---
+# Ignora o arquivo com a chave da API
+config.json
+.env
+
+# --- Dados da Aplicação (Runtime) ---
+# Ignora uploads temporários de APKs
+uploads/
+
+# Ignora resultados de análises (JADX, Screenshots, Videos)
+outputs/
+
+# Ignora cache de ícones extraídos
+static/icons/
+
+# Ignora APKs estáticos (opcional, remova se quiser versionar o app base)
+static/apk/
+
+# --- Binários e Dependências Externas ---
+# Ignora a pasta do scrcpy e executáveis
+mirror/
+*.exe
+*.dll
+
+# --- IDEs e Sistema Operacional ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+
+# --- Arquivos Compactados e Backups ---
+*.zip
+*.rar
+*.7z
