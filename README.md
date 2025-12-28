@@ -1,4 +1,4 @@
-![instr_frida](https://github.com/user-attachments/assets/87cab3cb-c767-413d-bca2-9b121d20da44)# OmniHook Fr1da
+# OmniHook Fr1da
 
 **OmniHook Fr1da** é uma interface web avançada e unificada para instrumentação dinâmica, análise de segurança e gerenciamento de dispositivos Android. A ferramenta combina o poder do **Frida**, **ADB** e ferramentas de análise estática em um painel moderno e responsivo.
 
