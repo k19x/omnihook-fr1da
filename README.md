@@ -12,6 +12,8 @@ Esta aplicação atua como um "canivete suíço" para pesquisadores de seguranç
 *   **Detecção Automática:** Lista dispositivos conectados via USB e TCP/IP.
 *   **Insights em Tempo Real:** Monitoramento de bateria, temperatura, uso de CPU, status de Root e presença do servidor Frida.
 *   **Controle ADB:** Reiniciar servidor Frida, conectar via Wi-Fi (TCP/IP) e terminal ADB integrado no navegador.
+![device_manager](https://github.com/user-attachments/assets/00e8cbe4-002f-4edd-a996-a2b6effed4f8)
+
 
 ### 💉 Instrumentação com Frida
 *   **Injeção de Scripts:** Selecione e execute múltiplos scripts `.js` simultaneamente em processos alvo.
