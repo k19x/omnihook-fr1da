@@ -274,10 +274,10 @@ def run_cmd_and_stream_to_queue(cmd: List[str], queue: asyncio.Queue):
     """
     try:
         process = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8', errors='replace'
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
-        for line in iter(process.stdout.readline, ''):
-            queue.put_nowait(line.rstrip())
+        for line in iter(process.stdout.readline, b''):
+            queue.put_nowait(line.decode('utf-8', errors='replace').rstrip())
         process.stdout.close()
         process.wait()
     except Exception as e:
